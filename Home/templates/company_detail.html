@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ company.name }} - Company Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- Header -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        {% if company.logo %}
+                        <img src="{{ company.logo.url }}" alt="{{ company.name }} Logo" class="w-16 h-16 rounded-full mr-4 object-cover">
+                        {% endif %}
+                        <div>
+                            <h1 class="text-3xl font-bold text-gray-900">{{ company.name }}</h1>
+                            <p class="text-gray-600">{{ company.industry }}</p>
+                        </div>
+                    </div>
+                    <div class="flex space-x-3">
+                        <a href="{% url 'home:company_list' %}" 
+                           class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md transition duration-300">
+                            Back to List
+                        </a>
+                        <a href="{% url 'home:company_update' company.id %}" 
+                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md transition duration-300 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            Edit
+                        </a>
+                        <a href="{% url 'home:company_delete' company.id %}" 
+                           class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition duration-300">
+                            Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Company Information -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Contact Information -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="font-semibold text-gray-700">Email:</span>
+                            {% if company.email %}
+                                <a href="mailto:{{ company.email }}" class="text-blue-500 hover:text-blue-700 ml-2">{{ company.email }}</a>
+                            {% else %}
+                                <span class="text-gray-500 ml-2">Not provided</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Phone:</span>
+                            {% if company.phone %}
+                                <span class="text-gray-600 ml-2">{{ company.phone }}</span>
+                            {% else %}
+                                <span class="text-gray-500 ml-2">Not provided</span>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Website:</span>
+                            {% if company.website %}
+                                <a href="{{ company.website }}" target="_blank" class="text-blue-500 hover:text-blue-700 ml-2">{{ company.website }}</a>
+                            {% else %}
+                                <span class="text-gray-500 ml-2">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Details -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Company Details</h2>
+                    <div class="space-y-3">
+                        <div>
+                            <span class="font-semibold text-gray-700">Industry:</span>
+                            <span class="text-gray-600 ml-2">{{ company.industry|default:"Not specified" }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Employee Count:</span>
+                            <span class="text-gray-600 ml-2">{{ company.employee_count|default:"Not specified" }}</span>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-gray-700">Founded:</span>
+                            <span class="text-gray-600 ml-2">{{ company.created_at|date:"F d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Address</h2>
+                <div class="text-gray-600">
+                    {% if company.address %}
+                        <p>{{ company.address }}</p>
+                    {% endif %}
+                    {% if company.city or company.country %}
+                        <p>{{ company.city }}{% if company.city and company.country %}, {% endif %}{{ company.country }}</p>
+                    {% endif %}
+                    {% if not company.address and not company.city and not company.country %}
+                        <p class="text-gray-500">Address not provided</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Description -->
+            {% if company.description %}
+            <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">About the Company</h2>
+                <div class="text-gray-600 whitespace-pre-line">{{ company.description }}</div>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Record Information</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                        <span class="font-semibold">Created:</span> {{ company.created_at|date:"F d, Y g:i A" }}
+                    </div>
+                    <div>
+                        <span class="font-semibold">Last Updated:</span> {{ company.updated_at|date:"F d, Y g:i A" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

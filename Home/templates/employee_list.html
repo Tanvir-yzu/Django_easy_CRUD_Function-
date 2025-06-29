@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management - Employee List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .btn-hover {
+            transition: all 0.2s ease;
+        }
+        .btn-hover:hover {
+            transform: scale(1.05);
+        }
+        .table-row:hover {
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header Section -->
+        <div class="glass-effect rounded-2xl p-6 mb-8 card-hover">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        <i class="fas fa-users mr-3"></i>
+                        Employee Management
+                    </h1>
+                    <p class="text-white/80">Manage your organization's workforce</p>
+                </div>
+                <a href="{% url 'home:employee_add' %}"
+                   class="inline-flex items-center px-6 py-3 bg-green-500/80 hover:bg-green-600 text-white font-medium rounded-lg transition-all duration-300 btn-hover shadow-lg">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add New Employee
+                </a>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="glass-effect rounded-xl p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 bg-blue-500/20 rounded-lg">
+                        <i class="fas fa-users text-2xl text-blue-300"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-white/80 text-sm">Total Employees</p>
+                        <p class="text-2xl font-bold text-white">{{ employees|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 bg-green-500/20 rounded-lg">
+                        <i class="fas fa-user-check text-2xl text-green-300"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-white/80 text-sm">Active Employees</p>
+                        <p class="text-2xl font-bold text-white">{{ employees|length }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-effect rounded-xl p-6 card-hover">
+                <div class="flex items-center">
+                    <div class="p-3 bg-purple-500/20 rounded-lg">
+                        <i class="fas fa-building text-2xl text-purple-300"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-white/80 text-sm">Departments</p>
+                        <p class="text-2xl font-bold text-white">{% regroup employees by department as department_list %}{{ department_list|length }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search and Filter Section -->
+        <div class="glass-effect rounded-2xl p-6 mb-8 card-hover" x-data="{ showFilters: false }">
+            <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <div class="flex-1 max-w-md">
+                    <div class="relative">
+                        <input type="text" 
+                               placeholder="Search employees..."
+                               class="w-full pl-10 pr-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/60"></i>
+                    </div>
+                </div>
+                <button @click="showFilters = !showFilters" 
+                        class="inline-flex items-center px-4 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all duration-300">
+                    <i class="fas fa-filter mr-2"></i>
+                    Filters
+                    <i class="fas fa-chevron-down ml-2 transform transition-transform" :class="{'rotate-180': showFilters}"></i>
+                </button>
+            </div>
+            
+            <!-- Filter Options -->
+            <div x-show="showFilters" x-transition class="mt-4 pt-4 border-t border-white/20">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <select class="px-4 py-2 bg-white/80 border border-white/20 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="">All Departments</option>
+                        {% regroup employees by department as department_list %}
+                        {% for department in department_list %}
+                            {% if department.grouper %}
+                                <option value="{{ department.grouper }}">{{ department.grouper }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select class="px-4 py-2 bg-white/80 border border-white/20 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="">All Positions</option>
+                        {% regroup employees by position as position_list %}
+                        {% for position in position_list %}
+                            {% if position.grouper %}
+                                <option value="{{ position.grouper }}">{{ position.grouper }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                    <select class="px-4 py-2 bg-white/80 border border-white/20 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="">Sort By</option>
+                        <option value="name">Name</option>
+                        <option value="hire_date">Hire Date</option>
+                        <option value="department">Department</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Table -->
+        <div class="glass-effect rounded-2xl overflow-hidden card-hover">
+            {% if employees %}
+                <!-- Desktop Table View -->
+                <div class="hidden lg:block overflow-x-auto">
+                    <table class="min-w-full">
+                        <thead class="bg-white/10">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                                    <i class="fas fa-id-badge mr-2"></i>Employee ID
+                                </th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                                    <i class="fas fa-user mr-2"></i>Employee
+                                </th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                                    <i class="fas fa-briefcase mr-2"></i>Position
+                                </th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                                    <i class="fas fa-building mr-2"></i>Department
+                                </th>
+                                <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-white/80 uppercase tracking-wider">
+                                    <i class="fas fa-calendar mr-2"></i>Hire Date
+                                </th>
+                                <th scope="col" class="px-6 py-4 text-right text-xs font-medium text-white/80 uppercase tracking-wider">
+                                    <i class="fas fa-cogs mr-2"></i>Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-white/10">
+                            {% for employee in employees %}
+                            <tr class="table-row transition-colors duration-200">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-white font-mono text-sm">{{ employee.employee_id }}</span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10">
+                                            {% if employee.profile_picture %}
+                                                <img class="h-10 w-10 rounded-full object-cover border-2 border-white/30" 
+                                                     src="{{ employee.profile_picture.url }}" 
+                                                     alt="{{ employee.first_name }} {{ employee.last_name }}">
+                                            {% else %}
+                                                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center border-2 border-white/30">
+                                                    <span class="text-white font-medium text-sm">{{ employee.first_name|first }}{{ employee.last_name|first }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-white font-medium">{{ employee.first_name }} {{ employee.last_name }}</div>
+                                            <div class="text-white/60 text-sm">{{ employee.email|default:"No email" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-200">
+                                        {{ employee.position }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-white">
+                                    {{ employee.department|default:"Not assigned" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-white text-sm">
+                                    {{ employee.hire_date|date:"M d, Y" }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <div class="flex justify-end space-x-2">
+                                        <a href="{% url 'home:employee_detail' employee.id %}"
+                                           class="inline-flex items-center px-3 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 rounded-md transition-all duration-200 btn-hover"
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'home:employee_update' employee.id %}"
+                                           class="inline-flex items-center px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-200 rounded-md transition-all duration-200 btn-hover"
+                                           title="Edit Employee">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button onclick="confirmDelete('{{ employee.id }}', '{{ employee.first_name }} {{ employee.last_name }}')"
+                                                class="inline-flex items-center px-3 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-md transition-all duration-200 btn-hover"
+                                                title="Delete Employee">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div class="lg:hidden space-y-4 p-4">
+                    {% for employee in employees %}
+                    <div class="bg-white/10 rounded-xl p-4 card-hover">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-12 w-12">
+                                    {% if employee.profile_picture %}
+                                        <img class="h-12 w-12 rounded-full object-cover border-2 border-white/30" 
+                                             src="{{ employee.profile_picture.url }}" 
+                                             alt="{{ employee.first_name }} {{ employee.last_name }}">
+                                    {% else %}
+                                        <div class="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center border-2 border-white/30">
+                                            <span class="text-white font-medium">{{ employee.first_name|first }}{{ employee.last_name|first }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-3">
+                                    <h3 class="text-white font-medium">{{ employee.first_name }} {{ employee.last_name }}</h3>
+                                    <p class="text-white/60 text-sm">{{ employee.employee_id }}</p>
+                                </div>
+                            </div>
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-200">
+                                {{ employee.position }}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+                            <div>
+                                <span class="text-white/60">Department:</span>
+                                <span class="text-white ml-1">{{ employee.department|default:"Not assigned" }}</span>
+                            </div>
+                            <div>
+                                <span class="text-white/60">Hire Date:</span>
+                                <span class="text-white ml-1">{{ employee.hire_date|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <a href="{% url 'home:employee_detail' employee.id %}"
+                               class="inline-flex items-center px-3 py-1 bg-blue-500/20 hover:bg-blue-500/40 text-blue-200 rounded-md transition-all duration-200">
+                                <i class="fas fa-eye mr-1"></i> View
+                            </a>
+                            <a href="{% url 'home:employee_update' employee.id %}"
+                               class="inline-flex items-center px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-200 rounded-md transition-all duration-200">
+                                <i class="fas fa-edit mr-1"></i> Edit
+                            </a>
+                            <button onclick="confirmDelete('{{ employee.id }}', '{{ employee.first_name }} {{ employee.last_name }}')"
+                                    class="inline-flex items-center px-3 py-1 bg-red-500/20 hover:bg-red-500/40 text-red-200 rounded-md transition-all duration-200">
+                                <i class="fas fa-trash mr-1"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-16">
+                    <div class="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-users text-4xl text-white/60"></i>
+                    </div>
+                    <h3 class="text-xl font-medium text-white mb-2">No employees found</h3>
+                    <p class="text-white/60 mb-6">Get started by adding your first employee to the system.</p>
+                    <a href="{% url 'home:employee_add' %}"
+                       class="inline-flex items-center px-6 py-3 bg-green-500/80 hover:bg-green-600 text-white font-medium rounded-lg transition-all duration-300 btn-hover">
+                        <i class="fas fa-plus mr-2"></i>
+                        Add First Employee
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden z-50" x-data="{ show: false }" x-show="show" x-transition>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-effect rounded-2xl p-6 max-w-md w-full mx-auto">
+                <div class="text-center">
+                    <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-exclamation-triangle text-2xl text-red-400"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Delete Employee</h3>
+                    <p class="text-white/80 mb-6">
+                        Are you sure you want to delete <strong id="employeeName"></strong>? This action cannot be undone.
+                    </p>
+                    <div class="flex gap-3 justify-center">
+                        <button onclick="hideDeleteModal()" 
+                                class="px-4 py-2 bg-gray-500/50 hover:bg-gray-600/50 text-white rounded-lg transition-all duration-300">
+                            Cancel
+                        </button>
+                        <form id="deleteForm" method="post" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-red-500/80 hover:bg-red-600 text-white rounded-lg transition-all duration-300">
+                                Delete Employee
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function confirmDelete(employeeId, employeeName) {
+            document.getElementById('employeeName').textContent = employeeName;
+            document.getElementById('deleteForm').action = `/employee/${employeeId}/delete/`;
+            document.getElementById('deleteModal').classList.remove('hidden');
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideDeleteModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideDeleteModal();
+            }
+        });
+
+        // Search functionality
+        document.querySelector('input[placeholder="Search employees..."]').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('.table-row, .lg\\:hidden .card-hover');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

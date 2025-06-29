@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if form.instance.pk %}Edit Employee{% else %}Add Employee{% endif %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .form-field {
+            transition: all 0.2s ease;
+        }
+        .form-field:focus {
+            transform: translateY(-1px);
+        }
+        .custom-checkbox {
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.25rem;
+            background-color: white;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .custom-checkbox:checked {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+        .custom-checkbox:hover {
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen py-8">
+    <div class="container mx-auto px-4 max-w-6xl">
+        <!-- Header Section -->
+        <div class="glass-effect rounded-2xl p-6 mb-8 card-hover">
+            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white mb-2">
+                        <i class="fas fa-user-plus mr-3"></i>
+                        {% if form.instance.pk %}
+                            Edit Employee
+                        {% else %}
+                            Add New Employee
+                        {% endif %}
+                    </h1>
+                    <p class="text-white/80">{% if form.instance.pk %}Update employee information{% else %}Create a new employee profile{% endif %}</p>
+                </div>
+                <a href="{% url 'home:employee_list' %}" 
+                   class="inline-flex items-center px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all duration-300 hover:scale-105">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Back to List
+                </a>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="glass-effect rounded-2xl p-8 card-hover">
+            <form method="post" enctype="multipart/form-data" class="space-y-8" x-data="{ profilePreview: null }" novalidate>
+                {% csrf_token %}
+                
+                <!-- Profile Picture Section -->
+                <div class="text-center mb-8">
+                    <div class="relative inline-block">
+                        <div class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center border-4 border-white/30 mx-auto mb-4 overflow-hidden">
+                            {% if form.instance.profile_picture %}
+                                <img src="{{ form.instance.profile_picture.url }}" 
+                                     alt="Profile" 
+                                     class="w-full h-full object-cover"
+                                     x-show="!profilePreview">
+                            {% else %}
+                                <i class="fas fa-user text-4xl text-white" x-show="!profilePreview"></i>
+                            {% endif %}
+                            <img x-show="profilePreview" 
+                                 :src="profilePreview" 
+                                 class="w-full h-full object-cover" 
+                                 style="display: none;">
+                        </div>
+                        <label for="{{ form.profile_picture.id_for_label }}" 
+                               class="absolute bottom-0 right-0 w-10 h-10 bg-blue-500 hover:bg-blue-600 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 hover:scale-110">
+                            <i class="fas fa-camera text-white"></i>
+                        </label>
+                        <input type="file" 
+                               id="{{ form.profile_picture.id_for_label }}"
+                               name="{{ form.profile_picture.name }}"
+                               class="hidden"
+                               accept="image/*"
+                               @change="
+                                   const file = $event.target.files[0];
+                                   if (file) {
+                                       const reader = new FileReader();
+                                       reader.onload = (e) => profilePreview = e.target.result;
+                                       reader.readAsDataURL(file);
+                                   }
+                               ">
+                    </div>
+                    <h3 class="text-xl font-semibold text-white mb-2">Profile Picture</h3>
+                    <p class="text-white/60 text-sm">Click the camera icon to upload a new photo</p>
+                    {% if form.profile_picture.errors %}
+                        <div class="mt-2 text-red-300 text-sm">
+                            <i class="fas fa-exclamation-circle mr-1"></i>
+                            {{ form.profile_picture.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Personal Information -->
+                <div class="bg-white/10 rounded-xl p-6 mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6">
+                        <i class="fas fa-user mr-3"></i>
+                        Personal Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.first_name.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-user mr-2"></i>First Name *
+                            </label>
+                            <input type="text" 
+                                   id="{{ form.first_name.id_for_label }}"
+                                   name="{{ form.first_name.name }}"
+                                   value="{{ form.first_name.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter first name"
+                                   required>
+                            {% if form.first_name.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.first_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.last_name.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-user mr-2"></i>Last Name *
+                            </label>
+                            <input type="text" 
+                                   id="{{ form.last_name.id_for_label }}"
+                                   name="{{ form.last_name.name }}"
+                                   value="{{ form.last_name.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter last name"
+                                   required>
+                            {% if form.last_name.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.last_name.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label for="{{ form.birth_date.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-birthday-cake mr-2"></i>Date of Birth
+                            </label>
+                            <input type="date" 
+                                   id="{{ form.birth_date.id_for_label }}"
+                                   name="{{ form.birth_date.name }}"
+                                   value="{{ form.birth_date.value|date:'Y-m-d'|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field">
+                            {% if form.birth_date.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.birth_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.address.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-map-marker-alt mr-2"></i>Address
+                            </label>
+                            <textarea id="{{ form.address.id_for_label }}"
+                                      name="{{ form.address.name }}"
+                                      rows="3"
+                                      class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field resize-none"
+                                      placeholder="Enter address">{{ form.address.value|default:'' }}</textarea>
+                            {% if form.address.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.address.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="bg-white/10 rounded-xl p-6 mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6">
+                        <i class="fas fa-address-book mr-3"></i>
+                        Contact Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.email.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-envelope mr-2"></i>Email Address *
+                            </label>
+                            <input type="email" 
+                                   id="{{ form.email.id_for_label }}"
+                                   name="{{ form.email.name }}"
+                                   value="{{ form.email.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter email address"
+                                   required>
+                            {% if form.email.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.email.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.phone.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-phone mr-2"></i>Phone Number
+                            </label>
+                            <input type="tel" 
+                                   id="{{ form.phone.id_for_label }}"
+                                   name="{{ form.phone.name }}"
+                                   value="{{ form.phone.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter phone number">
+                            {% if form.phone.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.phone.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employment Information -->
+                <div class="bg-white/10 rounded-xl p-6 mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6">
+                        <i class="fas fa-briefcase mr-3"></i>
+                        Employment Information
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="{{ form.employee_id.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-id-badge mr-2"></i>Employee ID *
+                            </label>
+                            <input type="text" 
+                                   id="{{ form.employee_id.id_for_label }}"
+                                   name="{{ form.employee_id.name }}"
+                                   value="{{ form.employee_id.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field font-mono"
+                                   placeholder="Enter employee ID"
+                                   required>
+                            {% if form.employee_id.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.employee_id.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.position.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-user-tie mr-2"></i>Position *
+                            </label>
+                            <input type="text" 
+                                   id="{{ form.position.id_for_label }}"
+                                   name="{{ form.position.name }}"
+                                   value="{{ form.position.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter position"
+                                   required>
+                            {% if form.position.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.position.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="{{ form.department.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-building mr-2"></i>Department
+                            </label>
+                            <input type="text" 
+                                   id="{{ form.department.id_for_label }}"
+                                   name="{{ form.department.name }}"
+                                   value="{{ form.department.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter department">
+                            {% if form.department.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.department.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.hire_date.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-calendar-plus mr-2"></i>Hire Date *
+                            </label>
+                            <input type="date" 
+                                   id="{{ form.hire_date.id_for_label }}"
+                                   name="{{ form.hire_date.name }}"
+                                   value="{{ form.hire_date.value|date:'Y-m-d'|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   required>
+                            {% if form.hire_date.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.hire_date.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="{{ form.salary.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-dollar-sign mr-2"></i>Salary
+                            </label>
+                            <input type="number" 
+                                   id="{{ form.salary.id_for_label }}"
+                                   name="{{ form.salary.name }}"
+                                   value="{{ form.salary.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter salary"
+                                   step="0.01"
+                                   min="0">
+                            {% if form.salary.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.salary.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.employment_status.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-user-check mr-2"></i>Employment Status
+                            </label>
+                            <select id="{{ form.employment_status.id_for_label }}"
+                                    name="{{ form.employment_status.name }}"
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field">
+                                <option value="" class="bg-gray-800">Select status</option>
+                                {% for choice in form.employment_status.field.choices %}
+                                    <option value="{{ choice.0 }}" 
+                                            class="bg-gray-800"
+                                            {% if form.employment_status.value == choice.0 %}selected{% endif %}>
+                                        {{ choice.1 }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.employment_status.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.employment_status.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Company and Status Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.company.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-building mr-2"></i>Company
+                            </label>
+                            <select id="{{ form.company.id_for_label }}"
+                                    name="{{ form.company.name }}"
+                                    class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field">
+                                <option value="" class="bg-gray-800">Select company</option>
+                                {% for choice in form.company.field.queryset %}
+                                    <option value="{{ choice.pk }}" 
+                                            class="bg-gray-800"
+                                            {% if form.company.value == choice.pk %}selected{% endif %}>
+                                        {{ choice.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.company.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.company.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Status Checkbox -->
+                        <div>
+                            <label class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-toggle-on mr-2"></i>Employee Status
+                            </label>
+                            <div class="flex items-center space-x-3 mt-3">
+                                <input type="checkbox" 
+                                       id="{{ form.is_active.id_for_label }}"
+                                       name="{{ form.is_active.name }}"
+                                       class="custom-checkbox"
+                                       {% if form.is_active.value %}checked{% endif %}>
+                                <label for="{{ form.is_active.id_for_label }}" class="text-white cursor-pointer select-none">
+                                    <span class="font-medium">Active Employee</span>
+                                    <div class="text-white/60 text-xs mt-1">Check if employee is currently active</div>
+                                </label>
+                            </div>
+                            <div class="mt-2 text-white/60 text-xs">
+                                <i class="fas fa-info-circle mr-1"></i>
+                                Inactive employees won't appear in active employee lists
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.is_active.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emergency Contact Information -->
+                <div class="bg-white/10 rounded-xl p-6 mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6">
+                        <i class="fas fa-phone-alt mr-3"></i>
+                        Emergency Contact
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="{{ form.emergency_contact.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-user-friends mr-2"></i>Emergency Contact Name
+                            </label>
+                            <input type="text" 
+                                   id="{{ form.emergency_contact.id_for_label }}"
+                                   name="{{ form.emergency_contact.name }}"
+                                   value="{{ form.emergency_contact.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter emergency contact name">
+                            {% if form.emergency_contact.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.emergency_contact.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div>
+                            <label for="{{ form.emergency_phone.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                                <i class="fas fa-phone mr-2"></i>Emergency Contact Phone
+                            </label>
+                            <input type="tel" 
+                                   id="{{ form.emergency_phone.id_for_label }}"
+                                   name="{{ form.emergency_phone.name }}"
+                                   value="{{ form.emergency_phone.value|default:'' }}"
+                                   class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field"
+                                   placeholder="Enter emergency contact phone">
+                            {% if form.emergency_phone.errors %}
+                                <div class="mt-2 text-red-300 text-sm">
+                                    <i class="fas fa-exclamation-circle mr-1"></i>
+                                    {{ form.emergency_phone.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Notes -->
+                <div class="bg-white/10 rounded-xl p-6 mb-8">
+                    <h3 class="text-xl font-semibold text-white mb-6">
+                        <i class="fas fa-sticky-note mr-3"></i>
+                        Additional Notes
+                    </h3>
+                    <div>
+                        <label for="{{ form.notes.id_for_label }}" class="block text-white/80 text-sm font-medium mb-2">
+                            <i class="fas fa-comment mr-2"></i>Notes
+                        </label>
+                        <textarea id="{{ form.notes.id_for_label }}"
+                                  name="{{ form.notes.name }}"
+                                  rows="4"
+                                  class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent form-field resize-none"
+                                  placeholder="Enter any additional notes about the employee">{{ form.notes.value|default:'' }}</textarea>
+                        {% if form.notes.errors %}
+                            <div class="mt-2 text-red-300 text-sm">
+                                <i class="fas fa-exclamation-circle mr-1"></i>
+                                {{ form.notes.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4 pt-6 border-t border-white/20">
+                    <a href="{% url 'home:employee_list' %}" 
+                       class="inline-flex items-center justify-center px-6 py-3 bg-gray-500/50 hover:bg-gray-600/50 text-white rounded-lg transition-all duration-300 hover:scale-105">
+                        <i class="fas fa-times mr-2"></i>
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="inline-flex items-center justify-center px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium rounded-lg transition-all duration-300 hover:scale-105 shadow-lg">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if form.instance.pk %}
+                            Update Employee
+                        {% else %}
+                            Create Employee
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Form validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const requiredFields = this.querySelectorAll('[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('border-red-400');
+                    field.classList.remove('border-white/20');
+                } else {
+                    field.classList.remove('border-red-400');
+                    field.classList.add('border-white/20');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+            }
+        });
+
+        // Real-time validation
+        document.querySelectorAll('input[required], select[required]').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (!this.value.trim()) {
+                    this.classList.add('border-red-400');
+                    this.classList.remove('border-white/20');
+                } else {
+                    this.classList.remove('border-red-400');
+                    this.classList.add('border-white/20');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
